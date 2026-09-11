@@ -1,0 +1,236 @@
+# Honeypot Decoy Profiles Configuration
+
+# Profile definitions for dynamic deception
+profiles:
+  PROFILE_LOW:
+    description: "Minimal deception surface"
+    priority: 1
+    decoys:
+      - type: users
+        count: 2
+        names: ["admin", "user"]
+      - type: directories
+        paths: ["/tmp", "/var/log"]
+      - type: files
+        count: 5
+        locations: ["/tmp", "/var/log"]
+    adaptation_rules:
+      - trigger: repeated_failed_auth
+        target_profile: PROFILE_CREDENTIAL
+        confidence: 0.8
+
+  PROFILE_RECON:
+    description: "Enhanced deception for reconnaissance detection"
+    priority: 2
+    decoys:
+      - type: users
+        count: 5
+        names: ["admin", "operator", "backup", "monitor", "service"]
+      - type: directories
+        paths: ["/tmp", "/var/log", "/opt/scripts", "/home/admin"]
+      - type: files
+        count: 15
+        locations: ["/tmp", "/var/log", "/opt/scripts", "/home/admin"]
+      - type: network_config
+        fake_networks: ["192.168.100.0/24", "10.0.50.0/24"]
+    adaptation_rules:
+      - trigger: recon_commands
+        target_profile: PROFILE_CREDENTIAL
+        confidence: 0.7
+      - trigger: file_download
+        target_profile: PROFILE_WEB
+        confidence: 0.6
+
+  PROFILE_CREDENTIAL:
+    description: "Credential-focused deception surface"
+    priority: 3
+    decoys:
+      - type: users
+        count: 8
+        names: ["admin", "root", "operator", "backup", "deploy", "service", "monitor", "dbadmin"]
+      - type: directories
+        paths: ["/tmp", "/var/log", "/etc", "/home/admin", "/home/backup", "/opt/backup"]
+      - type: files
+        count: 25
+        locations: ["/etc", "/home/admin", "/home/backup", "/opt/backup"]
+        include_configs: true
+        include_credentials: true
+      - type: fake_credentials
+        count: 10
+        formats: ["env", "config", "txt"]
+    adaptation_rules:
+      - trigger: credential_access
+        target_profile: PROFILE_HIGH_INTERACTION
+        confidence: 0.8
+      - trigger: privilege_escalation
+        target_profile: PROFILE_HIGH_INTERACTION
+        confidence: 0.9
+
+  PROFILE_WEB:
+    description: "Web/API focused deception surface"
+    priority: 3
+    decoys:
+      - type: users
+        count: 4
+        names: ["www-data", "apache", "nginx", "deploy"]
+      - type: directories
+        paths: ["/var/www", "/var/log/apache2", "/var/log/nginx", "/etc/apache2", "/etc/nginx"]
+      - type: files
+        count: 20
+        locations: ["/var/www", "/etc/apache2", "/etc/nginx"]
+        include_web_configs: true
+        include_database_configs: true
+      - type: fake_web_files
+        count: 15
+        types: ["php", "html", "js", "sql"]
+    adaptation_rules:
+      - trigger: web_vulnerability_scan
+        target_profile: PROFILE_HIGH_INTERACTION
+        confidence: 0.7
+      - trigger: sql_injection_attempt
+        target_profile: PROFILE_HIGH_INTERACTION
+        confidence: 0.9
+
+  PROFILE_HIGH_INTERACTION:
+    description: "Rich interaction surface for detailed observation"
+    priority: 4
+    decoys:
+      - type: users
+        count: 12
+        names: ["admin", "root", "operator", "backup", "deploy", "service", "monitor", "dbadmin", "www-data", "apache", "nginx", "redis"]
+      - type: directories
+        paths: ["/tmp", "/var/log", "/etc", "/home/admin", "/home/backup", "/opt/scripts", "/opt/backup", "/var/www", "/var/lib/mysql"]
+      - type: files
+        count: 50
+        locations: ["/etc", "/home/admin", "/home/backup", "/opt/scripts", "/opt/backup", "/var/www", "/var/lib/mysql"]
+        include_configs: true
+        include_credentials: true
+        include_web_configs: true
+        include_database_configs: true
+        include_scripts: true
+      - type: fake_credentials
+        count: 20
+        formats: ["env", "config", "txt", "key"]
+      - type: fake_web_files
+        count: 25
+        types: ["php", "html", "js", "sql", "py", "sh"]
+      - type: fake_database
+        tables: 10
+        rows_per_table: 50
+    adaptation_rules:
+      - trigger: any
+        target_profile: PROFILE_HIGH_INTERACTION
+        confidence: 1.0
+
+# Transition triggers and their detection patterns
+triggers:
+  repeated_failed_auth:
+    description: "Multiple failed authentication attempts"
+    detection:
+      event_type: login_failed
+      count: 5
+      window: 60  # seconds
+    confidence_boost: 0.2
+
+  recon_commands:
+    description: "Reconnaissance command execution"
+    detection:
+      command_patterns:
+        - "whoami"
+        - "hostname"
+        - "uname"
+        - "cat /etc/passwd"
+        - "ls -la"
+        - "netstat"
+        - "ps aux"
+      count: 3
+      window: 120
+    confidence_boost: 0.15
+
+  file_download:
+    description: "File download via wget/curl/tftp"
+    detection:
+      command_patterns:
+        - "wget"
+        - "curl"
+        - "tftp"
+        - "nc"
+        - "scp"
+      count: 1
+      window: 300
+    confidence_boost: 0.3
+
+  credential_access:
+    description: "Access to credential files"
+    detection:
+      file_patterns:
+        - ".env"
+        - "config.php"
+        - "database.yml"
+        - "credentials"
+        - "password"
+      count: 1
+      window: 600
+    confidence_boost: 0.4
+
+  privilege_escalation:
+    description: "Privilege escalation attempts"
+    detection:
+      command_patterns:
+        - "sudo"
+        - "su"
+        - "chmod"
+        - "chown"
+        - "passwd"
+      count: 2
+      window: 300
+    confidence_boost: 0.5
+
+  web_vulnerability_scan:
+    description: "Web vulnerability scanning patterns"
+    detection:
+      http_patterns:
+        - "admin"
+        - "login"
+        - "wp-content"
+        - ".php"
+        - "sql"
+      count: 10
+      window: 60
+    confidence_boost: 0.25
+
+  sql_injection_attempt:
+    description: "SQL injection patterns"
+    detection:
+      http_patterns:
+        - "' OR '1'='1"
+        - "UNION SELECT"
+        - "DROP TABLE"
+        - "1=1"
+      count: 1
+      window: 60
+    confidence_boost: 0.6
+
+# Decoy file templates
+decoy_templates:
+  config_files:
+    - name: "config.php"
+      content: "<?php\n// Fake configuration\n$db_host = 'localhost';\n$db_user = 'fake_user';\n$db_pass = 'fake_password_123';\n$db_name = 'fake_database';\n"
+    - name: "database.yml"
+      content: "production:\n  adapter: postgresql\n  database: fake_production\n  username: fake_admin\n  password: fake_secret_pass\n  host: localhost\n"
+    - name: ".env"
+      content: "DB_HOST=localhost\nDB_USER=fake_user\nDB_PASS=fake_password_123\nAPI_KEY=fake_api_key_xyz\nSECRET=fake_secret_key\n"
+
+  credential_files:
+    - name: "credentials.txt"
+      content: "admin:fake_password_123\nroot:fake_root_pass\noperator:fake_operator_pass\n"
+    - name: "passwords.csv"
+      content: "username,password,role\nadmin,fake_admin_pass,administrator\nuser,fake_user_pass,user\nbackup,fake_backup_pass,backup\n"
+
+  web_files:
+    - name: "index.php"
+      content: "<?php\n// Fake web application\ninclude 'config.php';\necho 'Welcome to fake application';\n"
+    - name: "login.php"
+      content: "<?php\n// Fake login page\nif ($_POST['username'] === 'admin' && $_POST['password'] === 'fake_password_123') {\n  echo 'Login successful';\n}\n"
+    - name: "backup.sql"
+      content: "-- Fake database backup\nCREATE TABLE users (id INT, username VARCHAR(50), password VARCHAR(50));\nINSERT INTO users VALUES (1, 'admin', 'fake_hash');\n"

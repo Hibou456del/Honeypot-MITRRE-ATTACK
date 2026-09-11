@@ -1,0 +1,389 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-09-08",
+  "mappings": [
+    {
+      "id": "mapping_001",
+      "event_pattern": "login_failed",
+      "technique_id": "T1110",
+      "technique_name": "Brute Force",
+      "tactic": "Credential Access",
+      "confidence": 0.6,
+      "reason": "Repeated failed login attempts indicate brute force activity",
+      "required_fields": ["event_type", "username"],
+      "boost_factors": {
+        "repeated_attempts": 0.2,
+        "multiple_users": 0.1
+      }
+    },
+    {
+      "id": "mapping_002",
+      "event_pattern": "command_execution:whoami",
+      "technique_id": "T1033",
+      "technique_name": "System Owner/User Discovery",
+      "tactic": "Discovery",
+      "confidence": 0.7,
+      "reason": "Execution of whoami indicates system user discovery",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "followed_by_hostname": 0.1,
+        "followed_by_uname": 0.1
+      }
+    },
+    {
+      "id": "mapping_003",
+      "event_pattern": "command_execution:hostname",
+      "technique_id": "T1016",
+      "technique_name": "System Network Configuration Discovery",
+      "tactic": "Discovery",
+      "confidence": 0.6,
+      "reason": "hostname command reveals system identity",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "followed_by_domain": 0.15
+      }
+    },
+    {
+      "id": "mapping_004",
+      "event_pattern": "command_execution:uname",
+      "technique_id": "T1082",
+      "technique_name": "System Information Discovery",
+      "tactic": "Discovery",
+      "confidence": 0.7,
+      "reason": "uname reveals system architecture and version",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "followed_by_kernel_info": 0.1
+      }
+    },
+    {
+      "id": "mapping_005",
+      "event_pattern": "command_execution:cat /etc/passwd",
+      "technique_id": "T1003",
+      "technique_name": "OS Credential Dumping",
+      "tactic": "Credential Access",
+      "confidence": 0.8,
+      "reason": "Reading /etc/passwd indicates credential harvesting attempt",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "followed_by_shadow": 0.2
+      }
+    },
+    {
+      "id": "mapping_006",
+      "event_pattern": "command_execution:ls -la",
+      "technique_id": "T1083",
+      "technique_name": "File and Directory Discovery",
+      "tactic": "Discovery",
+      "confidence": 0.5,
+      "reason": "Directory listing indicates file system reconnaissance",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "recursive_listing": 0.1,
+        "hidden_files": 0.15
+      }
+    },
+    {
+      "id": "mapping_007",
+      "event_pattern": "command_execution:netstat",
+      "technique_id": "T1016",
+      "technique_name": "System Network Configuration Discovery",
+      "tactic": "Discovery",
+      "confidence": 0.7,
+      "reason": "netstat reveals network connections and listening ports",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "followed_by_ss": 0.1
+      }
+    },
+    {
+      "id": "mapping_008",
+      "event_pattern": "command_execution:ps aux",
+      "technique_id": "T1057",
+      "technique_name": "Process Discovery",
+      "tactic": "Discovery",
+      "confidence": 0.7,
+      "reason": "Process listing indicates running process discovery",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "followed_by_top": 0.1
+      }
+    },
+    {
+      "id": "mapping_009",
+      "event_pattern": "file_download:wget",
+      "technique_id": "T1105",
+      "technique_name": "Ingress Tool Transfer",
+      "tactic": "Initial Access",
+      "confidence": 0.8,
+      "reason": "wget indicates download of external tools or payloads",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "suspicious_domain": 0.2,
+        "followed_by_chmod": 0.15
+      }
+    },
+    {
+      "id": "mapping_010",
+      "event_pattern": "file_download:curl",
+      "technique_id": "T1105",
+      "technique_name": "Ingress Tool Transfer",
+      "tactic": "Initial Access",
+      "confidence": 0.8,
+      "reason": "curl indicates download of external tools or payloads",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "suspicious_domain": 0.2,
+        "output_redirection": 0.1
+      }
+    },
+    {
+      "id": "mapping_011",
+      "event_pattern": "file_access:.env",
+      "technique_id": "T1552",
+      "technique_name": "Unsecured Credentials",
+      "tactic": "Credential Access",
+      "confidence": 0.9,
+      "reason": "Accessing .env files indicates credential harvesting",
+      "required_fields": ["file_path"],
+      "boost_factors": {
+        "followed_by_config_access": 0.1
+      }
+    },
+    {
+      "id": "mapping_012",
+      "event_pattern": "file_access:config.php",
+      "technique_id": "T1552",
+      "technique_name": "Unsecured Credentials",
+      "tactic": "Credential Access",
+      "confidence": 0.85,
+      "reason": "Accessing config files indicates credential harvesting",
+      "required_fields": ["file_path"],
+      "boost_factors": {
+        "database_config": 0.15
+      }
+    },
+    {
+      "id": "mapping_013",
+      "event_pattern": "command_execution:sudo",
+      "technique_id": "T1068",
+      "technique_name": "Exploitation for Privilege Escalation",
+      "tactic": "Privilege Escalation",
+      "confidence": 0.7,
+      "reason": "sudo usage indicates privilege escalation attempt",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "with_password": 0.2,
+        "multiple_attempts": 0.15
+      }
+    },
+    {
+      "id": "mapping_014",
+      "event_pattern": "command_execution:su",
+      "technique_id": "T1078",
+      "technique_name": "Valid Accounts",
+      "tactic": "Defense Evasion",
+      "confidence": 0.6,
+      "reason": "su indicates user switching attempt",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "to_root": 0.2
+      }
+    },
+    {
+      "id": "mapping_015",
+      "event_pattern": "http_request:admin",
+      "technique_id": "T1190",
+      "technique_name": "Exploit Public-Facing Application",
+      "tactic": "Initial Access",
+      "confidence": 0.5,
+      "reason": "Admin panel access indicates potential exploitation attempt",
+      "required_fields": ["http_path"],
+      "boost_factors": {
+        "followed_by_login": 0.2,
+        "vulnerable_params": 0.15
+      }
+    },
+    {
+      "id": "mapping_016",
+      "event_pattern": "http_request:sql_injection",
+      "technique_id": "T1190",
+      "technique_name": "Exploit Public-Facing Application",
+      "tactic": "Initial Access",
+      "confidence": 0.9,
+      "reason": "SQL injection patterns indicate exploitation attempt",
+      "required_fields": ["http_path", "http_params"],
+      "boost_factors": {
+        "union_select": 0.15,
+        "comment_truncation": 0.1
+      }
+    },
+    {
+      "id": "mapping_017",
+      "event_pattern": "command_execution:chmod",
+      "technique_id": "T1222",
+      "technique_name": "File and Directory Permissions Modification",
+      "tactic": "Defense Evasion",
+      "confidence": 0.6,
+      "reason": "chmod indicates permission modification for persistence or evasion",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "executable_bit": 0.2,
+        "recursive": 0.15
+      }
+    },
+    {
+      "id": "mapping_018",
+      "event_pattern": "command_execution:chown",
+      "technique_id": "T1222",
+      "technique_name": "File and Directory Permissions Modification",
+      "tactic": "Defense Evasion",
+      "confidence": 0.6,
+      "reason": "chown indicates ownership modification for persistence",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "to_root": 0.2
+      }
+    },
+    {
+      "id": "mapping_019",
+      "event_pattern": "command_execution:passwd",
+      "technique_id": "T1098",
+      "technique_name": "Account Manipulation",
+      "tactic": "Persistence",
+      "confidence": 0.7,
+      "reason": "passwd indicates password modification for persistence",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "without_interaction": 0.2
+      }
+    },
+    {
+      "id": "mapping_020",
+      "event_pattern": "command_execution:scp",
+      "technique_id": "T1041",
+      "technique_name": "Exfiltration Over C2 Channel",
+      "tactic": "Exfiltration",
+      "confidence": 0.7,
+      "reason": "scp indicates potential data exfiltration",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "to_external": 0.3,
+        "recursive": 0.15
+      }
+    },
+    {
+      "id": "mapping_021",
+      "event_pattern": "command_execution:nc",
+      "technique_id": "T1059",
+      "technique_name": "Command and Scripting Interpreter",
+      "tactic": "Execution",
+      "confidence": 0.6,
+      "reason": "netcat can be used for reverse shells or data transfer",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "listening_mode": 0.25,
+        "port_forwarding": 0.2
+      }
+    },
+    {
+      "id": "mapping_022",
+      "event_pattern": "command_execution:python",
+      "technique_id": "T1059",
+      "technique_name": "Command and Scripting Interpreter",
+      "tactic": "Execution",
+      "confidence": 0.5,
+      "reason": "Python execution indicates script-based activity",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "one_liner": 0.2,
+        "base64_encoded": 0.25
+      }
+    },
+    {
+      "id": "mapping_023",
+      "event_pattern": "command_execution:bash",
+      "technique_id": "T1059",
+      "technique_name": "Command and Scripting Interpreter",
+      "tactic": "Execution",
+      "confidence": 0.5,
+      "reason": "Bash execution indicates script-based activity",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "one_liner": 0.2,
+        "pipe_chains": 0.15
+      }
+    },
+    {
+      "id": "mapping_024",
+      "event_pattern": "command_execution:echo",
+      "technique_id": "T1059",
+      "technique_name": "Command and Scripting Interpreter",
+      "tactic": "Execution",
+      "confidence": 0.3,
+      "reason": "echo is commonly used in various activities",
+      "required_fields": ["command"],
+      "boost_factors": {
+        "file_redirection": 0.15,
+        "base64_content": 0.2
+      }
+    },
+    {
+      "id": "mapping_025",
+      "event_pattern": "file_access:shadow",
+      "technique_id": "T1003",
+      "technique_name": "OS Credential Dumping",
+      "tactic": "Credential Access",
+      "confidence": 0.9,
+      "reason": "Accessing shadow file indicates credential harvesting",
+      "required_fields": ["file_path"],
+      "boost_factors": {
+        "followed_by_crack_attempt": 0.25
+      }
+    }
+  ],
+  "tactics": {
+    "Initial Access": [
+      "T1190",
+      "T1105"
+    ],
+    "Execution": [
+      "T1059"
+    ],
+    "Persistence": [
+      "T1098"
+    ],
+    "Privilege Escalation": [
+      "T1068",
+      "T1078"
+    ],
+    "Defense Evasion": [
+      "T1222",
+      "T1078"
+    ],
+    "Credential Access": [
+      "T1110",
+      "T1003",
+      "T1552"
+    ],
+    "Discovery": [
+      "T1033",
+      "T1016",
+      "T1082",
+      "T1083",
+      "T1057"
+    ],
+    "Lateral Movement": [],
+    "Collection": [],
+    "Exfiltration": [
+      "T1041"
+    ],
+    "Command and Control": [],
+    "Impact": []
+  },
+  "confidence_levels": {
+    "high": 0.8,
+    "medium": 0.5,
+    "low": 0.3
+  }
+}

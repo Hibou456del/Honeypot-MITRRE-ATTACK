@@ -1,0 +1,56 @@
+# Fake environment file for honeypot
+# All credentials and secrets are fictional
+
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=fake_production_database
+DB_USER=fake_db_admin
+DB_PASSWORD=fake_db_password_123456
+DB_SSL_MODE=require
+
+# API Configuration
+API_KEY=fake_api_key_xyz123abc789def456
+API_SECRET=fake_api_secret_ghi789jkl012mno345
+API_ENDPOINT=https://fake-api.example.com/v1
+
+# Application Configuration
+APP_SECRET=fake_app_secret_pqr678stu901vwx234
+APP_ENCRYPTION_KEY=fake_encryption_key_yza567bcd890efg123
+APP_ENV=production
+APP_DEBUG=false
+
+# Authentication
+JWT_SECRET=fake_jwt_secret_hij456klm789nop012
+JWT_EXPIRATION=3600
+OAUTH_CLIENT_ID=fake_oauth_client_abc123
+OAUTH_CLIENT_SECRET=fake_oauth_secret_def456
+
+# Backup Configuration
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE="0 2 * * *"
+BACKUP_PATH=/var/backups
+BACKUP_ENCRYPTION_KEY=fake_backup_key_qrs789tuv012wxy345
+
+# Email Configuration
+SMTP_HOST=smtp.fake-email.com
+SMTP_PORT=587
+SMTP_USER=fake_smtp_user
+SMTP_PASSWORD=fake_smtp_password_678
+SMTP_FROM=noreply@fake-company.com
+
+# Monitoring
+MONITORING_ENABLED=true
+MONITORING_ENDPOINT=https://fake-monitoring.example.com
+MONITORING_API_KEY=fake_monitoring_key_zab890cde123fgh456
+
+# Logging
+LOG_LEVEL=info
+LOG_PATH=/var/log/application
+LOG_FORMAT=json
+
+# Security
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_REQUESTS=100
+RATE_LIMIT_WINDOW=60
+CORS_ORIGINS=https://fake-frontend.example.com

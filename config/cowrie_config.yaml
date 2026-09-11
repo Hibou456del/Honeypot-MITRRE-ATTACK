@@ -1,0 +1,80 @@
+# Cowrie Integration Configuration
+
+# Cowrie settings for integration with existing installation
+cowrie:
+  # Integration mode: host (existing installation) | container (docker)
+  integration_mode: host
+  
+  # Paths for existing Cowrie installation (Linux)
+  host_paths:
+    install_dir: /opt/cowrie
+    config_dir: /opt/cowrie/etc
+    log_dir: /var/log/cowrie
+    share_dir: /opt/cowrie/share/cowrie
+    output_dir: /opt/cowrie/var/lib/cowrie
+  
+  # Paths for development (Windows/Docker)
+  dev_paths:
+    install_dir: ./cowrie
+    config_dir: ./cowrie/etc
+    log_dir: ./data/sample_logs
+    share_dir: ./cowrie/share/cowrie
+    output_dir: ./data/cowrie_output
+  
+  # Log format configuration
+  log_format:
+    # cowrie.json format for structured logging
+    format: json
+    # Log files to monitor
+    files:
+      - cowrie.json
+      - cowrie.log
+  
+  # Session management
+  sessions:
+    timeout: 1800  # 30 minutes
+    max_concurrent: 100
+    tracking_enabled: true
+  
+  # Authentication settings
+  authentication:
+    # Fake credentials for honeypot
+    enabled: true
+    users:
+      - username: admin
+        password: admin123
+      - username: root
+        password: toor
+      - username: user
+        password: password
+  
+  # File system emulation
+  filesystem:
+    # Fake file system for honeypot
+    enabled: true
+    base_path: /tmp/cowrie
+    fake_files:
+      - /etc/passwd
+      - /etc/shadow
+      - /etc/hosts
+      - /home/admin/.ssh/authorized_keys
+  
+  # Output and logging
+  output:
+    # Enable JSON output for easier parsing
+    json_enabled: true
+    # Log level
+    log_level: info
+    # Enable syslog
+    syslog_enabled: false
+  
+  # Network settings
+  network:
+    # Listen addresses
+    listen:
+      - 0.0.0.0:2222  # SSH
+      - 0.0.0.0:2223  # Telnet
+    # Maximum connections
+    max_connections: 50
+    # Connection timeout
+    connection_timeout: 60

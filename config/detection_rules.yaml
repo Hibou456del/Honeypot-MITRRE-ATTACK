@@ -1,0 +1,260 @@
+# Detection Engine Rules Configuration
+
+rules:
+  # Authentication-based rules
+  repeated_failed_auth:
+    enabled: true
+    severity: medium
+    description: "Multiple failed authentication attempts from same IP"
+    conditions:
+      event_type: login_failed
+      aggregation: count
+      threshold: 5
+      window: 60  # seconds
+    alert:
+      title: "Brute Force Attack Detected"
+      message: "Multiple failed login attempts from {source_ip}"
+      confidence: 0.8
+
+  credential_stuffing:
+    enabled: true
+    severity: high
+    description: "Credential stuffing with multiple usernames"
+    conditions:
+      event_type: login_failed
+      aggregation: unique_users
+      threshold: 3
+      window: 120
+    alert:
+      title: "Credential Stuffing Detected"
+      message: "Multiple username attempts from {source_ip}"
+      confidence: 0.85
+
+  # Reconnaissance rules
+  recon_activity:
+    enabled: true
+    severity: low
+    description: "System reconnaissance activity detected"
+    conditions:
+      event_patterns:
+        - command_execution:whoami
+        - command_execution:hostname
+        - command_execution:uname
+        - command_execution:cat /etc/passwd
+      threshold: 3
+      window: 180
+    alert:
+      title: "Reconnaissance Activity"
+      message: "System reconnaissance commands from {source_ip}"
+      confidence: 0.6
+
+  network_discovery:
+    enabled: true
+    severity: low
+    description: "Network discovery activity"
+    conditions:
+      event_patterns:
+        - command_execution:netstat
+        - command_execution:ifconfig
+        - command_execution:ip addr
+      threshold: 2
+      window: 120
+    alert:
+      title: "Network Discovery Activity"
+      message: "Network discovery commands from {source_ip}"
+      confidence: 0.65
+
+  # File system rules
+  file_system_traversal:
+    enabled: true
+    severity: low
+    description: "Extensive file system traversal"
+    conditions:
+      event_pattern: command_execution:ls
+      threshold: 10
+      window: 300
+    alert:
+      title: "File System Traversal"
+      message: "Extensive directory traversal from {source_ip}"
+      confidence: 0.5
+
+  sensitive_file_access:
+    enabled: true
+    severity: high
+    description: "Access to sensitive configuration files"
+    conditions:
+      file_patterns:
+        - ".env"
+        - "config.php"
+        - "database.yml"
+        - "shadow"
+        - "passwd"
+      threshold: 1
+      window: 600
+    alert:
+      title: "Sensitive File Access"
+      message: "Access to sensitive file: {file_path}"
+      confidence: 0.9
+
+  # Download/Exfiltration rules
+  suspicious_download:
+    enabled: true
+    severity: high
+    description: "Suspicious file download detected"
+    conditions:
+      command_patterns:
+        - "wget"
+        - "curl"
+        - "tftp"
+      threshold: 1
+      window: 300
+    alert:
+      title: "Suspicious File Download"
+      message: "File download via {command} from {source_ip}"
+      confidence: 0.8
+
+  potential_exfiltration:
+    enabled: true
+    severity: critical
+    description: "Potential data exfiltration activity"
+    conditions:
+      command_patterns:
+        - "scp"
+        - "nc -l"
+        - "nc -p"
+      threshold: 1
+      window: 300
+    alert:
+      title: "Potential Data Exfiltration"
+      message: "Exfiltration command detected: {command}"
+      confidence: 0.85
+
+  # Privilege escalation rules
+  privilege_escalation_attempt:
+    enabled: true
+    severity: high
+    description: "Privilege escalation attempt detected"
+    conditions:
+      command_patterns:
+        - "sudo"
+        - "su"
+        - "chmod 777"
+        - "chown root"
+      threshold: 2
+      window: 300
+    alert:
+      title: "Privilege Escalation Attempt"
+      message: "Privilege escalation commands from {source_ip}"
+      confidence: 0.8
+
+  # Web-based rules
+  web_vulnerability_scan:
+    enabled: true
+    severity: medium
+    description: "Web vulnerability scanning detected"
+    conditions:
+      http_patterns:
+        - "admin"
+        - "login"
+        - "wp-content"
+        - ".php?id="
+        - "union"
+      threshold: 10
+      window: 60
+    alert:
+      title: "Web Vulnerability Scan"
+      message: "Vulnerability scanning from {source_ip}"
+      confidence: 0.7
+
+  sql_injection_attempt:
+    enabled: true
+    severity: critical
+    description: "SQL injection attempt detected"
+    conditions:
+      http_patterns:
+        - "' OR '1'='1"
+        - "UNION SELECT"
+        - "DROP TABLE"
+        - "1=1"
+        - "sleep("
+      threshold: 1
+      window: 60
+    alert:
+      title: "SQL Injection Attempt"
+      message: "SQL injection pattern in request from {source_ip}"
+      confidence: 0.95
+
+  # Correlation rules
+  multi_stage_attack:
+    enabled: true
+    severity: critical
+    description: "Multi-stage attack pattern detected"
+    conditions:
+      sequence:
+        - event_type: login_success
+        - event_type: command_execution
+        - event_type: file_download
+      window: 600
+    alert:
+      title: "Multi-Stage Attack"
+      message: "Multi-stage attack pattern from {source_ip}"
+      confidence: 0.9
+
+  # Session-based rules
+  long_session:
+    enabled: true
+    severity: low
+    description: "Unusually long session duration"
+    conditions:
+      event_type: session_end
+      duration_threshold: 3600  # 1 hour
+    alert:
+      title: "Long Session Duration"
+      message: "Session {session_id} lasted {duration} seconds"
+      confidence: 0.4
+
+  high_command_rate:
+    enabled: true
+    severity: medium
+    description: "High rate of command execution"
+    conditions:
+      event_type: command_execution
+      rate_threshold: 10  # commands per minute
+      window: 60
+    alert:
+      title: "High Command Rate"
+      message: "High command execution rate from {source_ip}"
+      confidence: 0.7
+
+# Alert severity levels
+severity_levels:
+  critical:
+    priority: 1
+    auto_escalate: true
+    notification_required: true
+  high:
+    priority: 2
+    auto_escalate: false
+    notification_required: true
+  medium:
+    priority: 3
+    auto_escalate: false
+    notification_required: false
+  low:
+    priority: 4
+    auto_escalate: false
+    notification_required: false
+
+# Correlation settings
+correlation:
+  enabled: true
+  max_correlation_window: 3600  # 1 hour
+  min_confidence_threshold: 0.5
+  cross_session_correlation: true
+
+# Alert aggregation
+aggregation:
+  enabled: true
+  window: 300  # 5 minutes
+  max_alerts_per_window: 10
+  group_by: source_ip

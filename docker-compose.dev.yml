@@ -1,0 +1,110 @@
+# Docker Compose for Development Mode (Windows)
+# This configuration is for development and testing on Windows
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: honeypot-postgres-dev
+    environment:
+      POSTGRES_DB: honeypot_db
+      POSTGRES_USER: honeypot_user
+      POSTGRES_PASSWORD: dev_password_change_in_production
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - honeypot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U honeypot_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: honeypot-redis-dev
+    ports:
+      - "6379:6379"
+    networks:
+      - honeypot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Dashboard (Django)
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: honeypot-dashboard-dev
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./config:/app/config
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=honeypot_db
+      - DB_USER=honeypot_user
+      - DB_PASSWORD=dev_password_change_in_production
+      - DJANGO_SECRET_KEY=dev_secret_key_change_in_production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - honeypot-network
+
+  # Log Collector
+  collector:
+    build:
+      context: .
+      dockerfile: Dockerfile.collector
+    container_name: honeypot-collector-dev
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      - LOG_LEVEL=INFO
+      - COWRIE_LOG_PATH=/app/data/sample_logs
+    depends_on:
+      - postgres
+    networks:
+      - honeypot-network
+
+  # Detection Engine
+  detection:
+    build:
+      context: .
+      dockerfile: Dockerfile.detection
+    container_name: honeypot-detection-dev
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      - DETECTION_ALERT_THRESHOLD=0.7
+      - DETECTION_CORRELATION_WINDOW=300
+    depends_on:
+      - postgres
+      - collector
+    networks:
+      - honeypot-network
+
+networks:
+  honeypot-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

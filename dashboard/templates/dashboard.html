@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
+            <p class="text-muted">Real-time monitoring of honeypot activities</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-value" id="total-events">0</div>
+                <div class="stat-label">Total Events</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-value" id="total-alerts">0</div>
+                <div class="stat-label">Total Alerts</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-value" id="unique-ips">0</div>
+                <div class="stat-label">Unique IPs</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-value" id="mitre-techniques">0</div>
+                <div class="stat-label">MITRE Techniques</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Events Over Time</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="eventsChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Events by Service</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="servicesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Alerts and Events -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Recent Alerts</h5>
+                    <button class="btn btn-sm btn-outline-light" onclick="refreshAlerts()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="recent-alerts">
+                        <p class="text-muted">Loading alerts...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Recent Events</h5>
+                    <button class="btn btn-sm btn-outline-light" onclick="refreshEvents()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="recent-events">
+                        <p class="text-muted">Loading events...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MITRE ATT&CK Overview -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-project-diagram"></i> MITRE ATT&CK Tactics Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div id="mitre-tactics" class="d-flex flex-wrap">
+                        <p class="text-muted">Loading MITRE tactics...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    loadStatistics();
+    loadCharts();
+    loadRecentAlerts();
+    loadRecentEvents();
+    loadMitreTactics();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(refreshDashboard, 30000);
+});
+
+function loadStatistics() {
+    fetch('/api/statistics')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('total-events').textContent = data.total_events;
+            document.getElementById('total-alerts').textContent = data.total_alerts;
+            document.getElementById('unique-ips').textContent = data.unique_ips;
+            document.getElementById('mitre-techniques').textContent = data.mitre_techniques;
+        })
+        .catch(error => console.error('Error loading statistics:', error));
+}
+
+function loadCharts() {
+    // Events over time chart
+    const eventsCtx = document.getElementById('eventsChart').getContext('2d');
+    new Chart(eventsCtx, {
+        type: 'line',
+        data: {
+            labels: ['1h ago', '45m ago', '30m ago', '15m ago', 'Now'],
+            datasets: [{
+                label: 'Events',
+                data: [12, 19, 8, 15, 22],
+                borderColor: '#e94560',
+                backgroundColor: 'rgba(233, 69, 96, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#e0e0e0'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        color: '#e0e0e0'
+                    },
+                    grid: {
+                        color: '#0f3460'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#e0e0e0'
+                    },
+                    grid: {
+                        color: '#0f3460'
+                    }
+                }
+            }
+        }
+    });
+
+    // Services chart
+    const servicesCtx = document.getElementById('servicesChart').getContext('2d');
+    new Chart(servicesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['SSH', 'HTTP', 'FTP'],
+            datasets: [{
+                data: [65, 25, 10],
+                backgroundColor: ['#e94560', '#0f3460', '#17a2b8']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#e0e0e0'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function loadRecentAlerts() {
+    fetch('/api/alerts?limit=5')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('recent-alerts');
+            if (data.alerts.length === 0) {
+                container.innerHTML = '<p class="text-muted">No recent alerts</p>';
+                return;
+            }
+            
+            let html = '<div class="list-group">';
+            data.alerts.forEach(alert => {
+                const badgeClass = `badge-${alert.severity}`;
+                html += `
+                    <div class="list-group-item list-group-item-action alert-card ${alert.severity}">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${alert.alert_id}</h6>
+                            <small>${alert.timestamp}</small>
+                        </div>
+                        <p class="mb-1">${alert.message}</p>
+                        <small>Source: ${alert.source_ip} | Confidence: ${(alert.confidence * 100).toFixed(0)}%</small>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            document.getElementById('recent-alerts').innerHTML = '<p class="text-danger">Error loading alerts</p>';
+        });
+}
+
+function loadRecentEvents() {
+    fetch('/api/events?limit=5')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('recent-events');
+            if (data.events.length === 0) {
+                container.innerHTML = '<p class="text-muted">No recent events</p>';
+                return;
+            }
+            
+            let html = '<div class="list-group">';
+            data.events.forEach(event => {
+                const badgeClass = `badge-${event.severity}`;
+                html += `
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${event.event_type}</h6>
+                            <small>${event.timestamp}</small>
+                        </div>
+                        <p class="mb-1">Service: ${event.service} | IP: ${event.source_ip}</p>
+                        <small>Session: ${event.session_id}</small>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            document.getElementById('recent-events').innerHTML = '<p class="text-danger">Error loading events</p>';
+        });
+}
+
+function loadMitreTactics() {
+    const tactics = [
+        { name: 'Initial Access', color: '#e94560' },
+        { name: 'Execution', color: '#0f3460' },
+        { name: 'Persistence', color: '#17a2b8' },
+        { name: 'Privilege Escalation', color: '#fd7e14' },
+        { name: 'Defense Evasion', color: '#dc3545' },
+        { name: 'Credential Access', color: '#ffc107' },
+        { name: 'Discovery', color: '#28a745' },
+        { name: 'Lateral Movement', color: '#6f42c1' },
+        { name: 'Collection', color: '#e83e8c' },
+        { name: 'Exfiltration', color: '#20c997' }
+    ];
+    
+    const container = document.getElementById('mitre-tactics');
+    let html = '';
+    tactics.forEach(tactic => {
+        html += `
+            <div class="mitre-tactic" style="border-left: 4px solid ${tactic.color}">
+                <strong>${tactic.name}</strong>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function refreshDashboard() {
+    loadStatistics();
+    loadRecentAlerts();
+    loadRecentEvents();
+}
+
+function refreshAlerts() {
+    loadRecentAlerts();
+}
+
+function refreshEvents() {
+    loadRecentEvents();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,102 @@
+# Docker Compose for Dynamic Honeypot Platform
+# Main configuration - use docker-compose.dev.yml for Windows development
+# Use docker-compose.prod.yml for Linux production deployment
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: honeypot-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-honeypot_db}
+      POSTGRES_USER: ${DB_USER:-honeypot_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_this_password}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - honeypot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-honeypot_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Dashboard (Django)
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: honeypot-dashboard
+    command: gunicorn dashboard.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./config:/app/config
+    ports:
+      - "${DASHBOARD_PORT:-8000}:8000"
+    environment:
+      - DEBUG=${DJANGO_DEBUG:-False}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-honeypot_db}
+      - DB_USER=${DB_USER:-honeypot_user}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - honeypot-network
+
+  # Log Collector
+  collector:
+    build:
+      context: .
+      dockerfile: Dockerfile.collector
+    container_name: honeypot-collector
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./config:/app/config
+      # For production, mount Cowrie logs from host
+      - ${COWRIE_LOG_PATH:-/var/log/cowrie}:/cowrie_logs:ro
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - COWRIE_LOG_PATH=/cowrie_logs
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    depends_on:
+      - postgres
+    networks:
+      - honeypot-network
+
+  # Detection Engine
+  detection:
+    build:
+      context: .
+      dockerfile: Dockerfile.detection
+    container_name: honeypot-detection
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      - DETECTION_ALERT_THRESHOLD=${DETECTION_ALERT_THRESHOLD:-0.7}
+      - DETECTION_CORRELATION_WINDOW=${DETECTION_CORRELATION_WINDOW:-300}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    depends_on:
+      - postgres
+      - collector
+    networks:
+      - honeypot-network
+
+networks:
+  honeypot-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

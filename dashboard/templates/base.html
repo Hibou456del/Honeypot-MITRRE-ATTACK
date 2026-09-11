@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Honeypot Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+        }
+        .navbar {
+            background-color: #16213e;
+            border-bottom: 2px solid #0f3460;
+        }
+        .navbar-brand {
+            color: #e94560 !important;
+            font-weight: bold;
+        }
+        .nav-link {
+            color: #e0e0e0 !important;
+        }
+        .nav-link:hover {
+            color: #e94560 !important;
+        }
+        .card {
+            background-color: #16213e;
+            border: 1px solid #0f3460;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #0f3460;
+            border-bottom: 1px solid #1a1a2e;
+            color: #e0e0e0;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #e94560;
+        }
+        .stat-label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+        .table {
+            color: #e0e0e0;
+        }
+        .table thead {
+            background-color: #0f3460;
+        }
+        .badge-critical {
+            background-color: #dc3545;
+        }
+        .badge-high {
+            background-color: #fd7e14;
+        }
+        .badge-medium {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .badge-low {
+            background-color: #28a745;
+        }
+        .badge-info {
+            background-color: #17a2b8;
+        }
+        .sidebar {
+            background-color: #16213e;
+            min-height: 100vh;
+            border-right: 1px solid #0f3460;
+        }
+        .sidebar .nav-link {
+            padding: 15px 20px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+        .sidebar .nav-link.active {
+            background-color: #e94560;
+            color: white !important;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .mitre-tactic {
+            background-color: #0f3460;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .mitre-tactic:hover {
+            background-color: #e94560;
+        }
+        .event-log {
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .alert-card {
+            border-left: 4px solid;
+        }
+        .alert-card.critical {
+            border-left-color: #dc3545;
+        }
+        .alert-card.high {
+            border-left-color: #fd7e14;
+        }
+        .alert-card.medium {
+            border-left-color: #ffc107;
+        }
+        .alert-card.low {
+            border-left-color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-shield-alt"></i> Dynamic Honeypot Platform
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/events">Events</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/alerts">Alerts</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/mitre">MITRE ATT&CK</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/sessions">Sessions</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 sidebar">
+                <div class="d-flex flex-column p-3">
+                    <h6 class="text-muted mb-3">Navigation</h6>
+                    <ul class="nav nav-pills flex-column mb-auto">
+                        <li class="nav-item">
+                            <a href="/" class="nav-link active">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/events" class="nav-link">
+                                <i class="fas fa-list"></i> Events
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/alerts" class="nav-link">
+                                <i class="fas fa-exclamation-triangle"></i> Alerts
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/mitre" class="nav-link">
+                                <i class="fas fa-project-diagram"></i> MITRE ATT&CK
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/sessions" class="nav-link">
+                                <i class="fas fa-users"></i> Sessions
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-10 main-content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

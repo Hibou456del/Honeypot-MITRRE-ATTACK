@@ -1,0 +1,104 @@
+# Dynamic Honeypot Platform - Main Configuration
+
+# Environment: development | production
+environment: development
+
+# Platform: windows | linux
+platform: windows
+
+# Base paths (cross-platform compatible)
+paths:
+  base_dir: .
+  config_dir: config
+  data_dir: data
+  log_dir: data/events
+  decoy_dir: data/generated_decoys
+  template_dir: honeypot/decoy_templates
+  
+  # Event subdirectories
+  raw_events: data/events/raw
+  normalized_events: data/events/normalized
+  exported_events: data/events/exported
+
+# Cowrie integration
+cowrie:
+  enabled: true
+  # On production (Linux), use host paths
+  # On development (Windows), use container paths
+  log_path: /var/log/cowrie  # Linux default
+  log_format: json
+  session_timeout: 1800  # 30 minutes
+  
+  # Windows development paths
+  dev_log_path: ./data/sample_logs/cowrie_sample.log
+
+# HTTP honeypot
+http_honeypot:
+  enabled: true
+  port: 8080
+  log_path: ./data/events/raw/http.log
+
+# Database
+database:
+  engine: postgresql
+  host: localhost
+  port: 5432
+  name: honeypot_db
+  user: honeypot_user
+  # Password from environment variable
+  password_env: DB_PASSWORD
+  
+  # SQLite for development
+  sqlite_path: ./data/honeypot.db
+
+# Dashboard
+dashboard:
+  enabled: true
+  host: 0.0.0.0
+  port: 8000
+  debug: true
+  secret_key_env: DJANGO_SECRET_KEY
+
+# Detection engine
+detection:
+  enabled: true
+  alert_threshold: 0.7
+  correlation_window: 300  # 5 minutes
+  max_events_per_session: 1000
+
+# MITRE ATT&CK
+mitre:
+  enabled: true
+  mapping_file: config/mitre_attack_mapping.json
+  auto_update: false
+  confidence_threshold: 0.5
+
+# Dynamic deception
+deception:
+  enabled: true
+  default_profile: PROFILE_LOW
+  adaptation_cooldown: 600  # 10 minutes
+  max_decoy_files: 100
+  
+  # Profile transition rules
+  auto_adapt: true
+  adaptation_triggers:
+    - repeated_failed_auth
+    - recon_commands
+    - file_download
+    - privilege_escalation
+
+# Logging
+logging:
+  level: INFO
+  format: json
+  file: ./logs/honeypot.log
+  max_size: 10485760  # 10MB
+  backup_count: 5
+
+# Security
+security:
+  isolate_network: true
+  restrict_outbound: true
+  max_connections_per_ip: 10
+  rate_limit_window: 60  # seconds
