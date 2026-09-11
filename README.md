@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dynamic Honeypot Platform with MITRE ATT&CK Mapping
 
 A sophisticated cybersecurity research platform for proactive threat detection using dynamic honeypots and MITRE ATT&CK framework integration.
@@ -184,3 +185,7 @@ This is an academic research project. Contributions should focus on:
 ## Disclaimer
 
 This platform is for educational and research purposes only. The authors are not responsible for misuse of this software. Always ensure proper authorization before deploying honeypots in any environment.
+=======
+# Honeypot-MITRRE-ATTACK
+Il s'agit de construire la phase expérimental de notre mémoire Conception et Expérimentation d’un Honeypot Multi-Services à Leurres Dynamiques pour la Détection Proactive des Menaces dans un Système d’Information Universitaire, avec Mapping MITRE ATT&amp;CK
+>>>>>>> ed0ede3c204191f05bccebbe7a8d1f8cdc03d9b0
